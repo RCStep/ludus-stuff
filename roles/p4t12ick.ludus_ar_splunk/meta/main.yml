@@ -1,0 +1,19 @@
+---
+dependencies: []
+
+galaxy_info:
+  role_name: ludus_ar_splunk
+  author: P4T12ICK
+  description: An Ansible Role that installs Splunk Attack Range.
+  company: Splunk
+  license: GPLv3
+  min_ansible_version: "2.10"
+  platforms:
+    - name: Ubuntu
+      versions:
+        - jammy
+  galaxy_tags:
+    - security
+    - splunk
+
+collections: []

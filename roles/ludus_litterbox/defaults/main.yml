@@ -1,0 +1,9 @@
+---
+# Role variables should all be prefaced with the name of the role to avoid
+# name conflicts with other roles
+ludus_litterbox_github_url: "https://github.com/BlackSnufkin/LitterBox.git"
+ludus_litterbox_install_path: "C:\\LitterBox"
+ludus_litterbox_task_username: "localuser"
+ludus_litterbox_task_password: "password"
+ludus_litterbox_zip: "files/LitterBox.zip"
+ludus_litterbox_port: 1337

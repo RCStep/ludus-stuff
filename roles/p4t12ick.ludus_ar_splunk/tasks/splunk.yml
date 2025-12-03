@@ -1,0 +1,29 @@
+---
+
+- name: download splunk
+  get_url:
+    url: "{{ ludus_ar_splunk_url }}"
+    dest: /opt/splunk.tgz
+
+- name: stop splunk if running
+  service:
+    name: splunkd
+    state: stopped
+  ignore_errors: true
+  become: yes
+
+- name: install splunk binary
+  unarchive: remote_src=yes src=/opt/splunk.tgz dest=/opt/ creates=yes
+  become: yes
+
+- name: accept license and start splunk
+  shell: /opt/splunk/bin/splunk start --accept-license --answer-yes --no-prompt --seed-passwd {{ ludus_ar_splunk_password }}
+  become: yes
+
+- name: enable boot-start
+  shell: /opt/splunk/bin/splunk enable boot-start
+
+- name: restart splunk
+  service:
+    name: splunkd
+    state: restarted

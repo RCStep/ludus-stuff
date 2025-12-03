@@ -1,0 +1,109 @@
+---
+- name: Ensure install directory exists
+  ansible.builtin.win_file:
+    path: "{{ ludus_litterbox_install_path }}"
+    state: directory
+
+- name: kill any running python processes as elevated user
+  ansible.windows.win_powershell:
+    script: |
+      $processes = Get-Process python -ErrorAction SilentlyContinue -IncludeUserName | Where-Object {$_.UserName -like "*localuser"}
+      if ($processes) {
+        Stop-Process -Name python -Force
+      }
+    sensitive_parameters:
+      - name: Credential
+        username: '{{ ludus_litterbox_task_username }}'
+        password: '{{ ludus_litterbox_task_password }}'
+  ignore_errors: true
+
+- name: kill any running powershell processes as elevated user
+  ansible.windows.win_powershell:
+    script: |
+      $processes = Get-Process powershell -ErrorAction SilentlyContinue -IncludeUserName | Where-Object {$_.UserName -like "*localuser"}
+      if ($processes) {
+        Stop-Process -Name powershell -Force
+      }
+    sensitive_parameters:
+      - name: Credential
+        username: '{{ ludus_litterbox_task_username }}'
+        password: '{{ ludus_litterbox_task_password }}'
+  ignore_errors: true
+
+- name: Check if LitterBox.zip exists locally
+  ansible.builtin.stat:
+    path: "{{ ludus_litterbox_zip }}"
+  register: local_zip_check
+  delegate_to: localhost
+
+- name: Copy LitterBox.zip to install directory if it exists locally
+  ansible.builtin.win_copy:
+    src: "{{ ludus_litterbox_zip }}"
+    dest: "{{ ludus_litterbox_install_path }}"
+  when: local_zip_check.stat.exists
+
+- name: Check if LitterBox.zip exists in the install directory
+  ansible.builtin.win_stat:
+    path: "{{ ludus_litterbox_install_path }}\\LitterBox.zip"
+  register: litterbox_zip_check
+
+- name: Delete install directory if LitterBox.zip does not exist
+  ansible.builtin.win_file:
+    path: "{{ ludus_litterbox_install_path }}"
+    state: absent
+  when: not litterbox_zip_check.stat.exists
+  retries: 5
+  delay: 10
+  register: delete_result
+  until: delete_result is succeeded
+  ignore_errors: true
+
+- name: git clone Litterbox from Github if LitterBox.zip does not exist
+  ansible.builtin.win_shell: |
+    if (Test-Path "{{ ludus_litterbox_install_path }}\\.git") {
+      cd "{{ ludus_litterbox_install_path }}"
+      git fetch --all
+      git reset --hard origin/master
+    } else {
+      git clone "{{ ludus_litterbox_github_url }}" "{{ ludus_litterbox_install_path }}"
+    }
+  when: not litterbox_zip_check.stat.exists
+
+- name: Unzip LitterBox.zip if it exists
+  ansible.builtin.win_unzip:
+    src: "{{ ludus_litterbox_install_path }}\\LitterBox.zip"
+    dest: "{{ ludus_litterbox_install_path }}"
+    delete_archive: yes
+  when: litterbox_zip_check.stat.exists
+
+#- name: Clone Litterbox from Github if ludus_litterbox_zip does not exist
+#  community.windows.win_git:
+#    repo: "{{ ludus_litterbox_github_url }}"
+#    dest: "{{ ludus_litterbox_install_path }}"
+#    version: master
+#    force: yes
+#  when: not litterbox_zip_check.stat.exists
+  
+- name: Litterbox install venv and requirements
+  ansible.builtin.win_shell: |
+    python -m venv venv; .\venv\Scripts\Activate.ps1; pip install -r requirements.txt; exit
+  args:
+    chdir: "{{ ludus_litterbox_install_path }}"
+
+- name: Change C:\LitterBox\Config\config.yaml Host to "0.0.0.0" to allow external access
+  ansible.windows.win_powershell:
+    script: |
+      (Get-Content "C:\LitterBox\Config\config.yaml").replace('127.0.0.1','0.0.0.0') | Set-Content -Path "C:\LitterBox\Config\config.yaml" -Encoding Ascii
+
+- name: Create a firewall rule for LitterBox
+  win_firewall_rule:
+    name: "LitterBox"
+    enable: yes
+    localport: "{{ ludus_litterbox_port }}"
+    protocol: tcp
+    action: allow
+    dir: inbound
+    remoteport: any
+    remoteip: any
+    localip: any
+  register: firewall_rule

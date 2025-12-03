@@ -1,0 +1,20 @@
+---
+
+- name: download {{ item }} from S3 bucket
+  get_url:
+    url: '{{ ludus_ar_splunk_s3_bucket_url }}/{{ item }}'
+    dest: /tmp/{{ item }}
+
+- name: Install {{ item }} via REST
+  uri:
+    url: "https://127.0.0.1:8089/services/apps/local"
+    method: POST
+    user: "admin"
+    password: "{{ ludus_ar_splunk_password }}"
+    validate_certs: false
+    body: "name=/tmp/{{ item }}&update=true&filename=true"
+    headers:
+      Content-Type: "application/x-www-form-urlencoded"
+    status_code: [ 200, 201 ]
+    timeout: 300
+  notify: restart splunk

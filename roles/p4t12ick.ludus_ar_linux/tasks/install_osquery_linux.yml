@@ -1,0 +1,117 @@
+---
+# This playbook installs osquery on a linux machine
+- name: Remove problematic osquery repository
+  become: true
+  apt_repository:
+    repo: "deb [arch=amd64] https://pkg.osquery.io/deb deb main"
+    state: absent
+  ignore_errors: true
+
+- name: Install required system packages
+  become: true
+  apt:
+    name: 
+      - software-properties-common
+      - curl
+      - gnupg
+      - ca-certificates
+    state: present    
+    update_cache: true
+
+- name: drop the osquery_install.sh script /tmp
+  become: true
+  copy:
+    src: osquery_install.sh
+    dest: /tmp/osquery_install.sh 
+    mode: '0755'
+
+- name: check if osquery service exist
+  stat: path=/etc/init.d/osqueryd
+  register: service_status 
+
+- name: is osquery service exist? if yes stop it!
+  become: true
+  service: 
+    name: osqueryd
+    state: stopped
+  when: service_status.stat.exists
+  ignore_errors: true
+
+- name: run osquery_install.sh
+  become: true
+  command: sh /tmp/osquery_install.sh
+  register: osquery_script_result
+  ignore_errors: true
+
+- name: Check if osquery was installed successfully
+  become: true
+  command: which osqueryd
+  register: osquery_check
+  ignore_errors: true
+
+- name: Install osquery directly if script failed
+  become: true
+  apt:
+    name: osquery
+    state: present
+    allow_unauthenticated: yes
+  when: osquery_check.rc != 0
+  ignore_errors: true
+
+- name: clean the script
+  become: true
+  command: rm /tmp/osquery_install.sh
+
+- name: copy template.osquery.conf
+  become: true
+  copy:
+    src: template.osquery.conf
+    dest: /etc/osquery/osquery.conf 
+
+- name: copy template.osquery.conf
+  become: true
+  copy:
+    src: template.osquery.conf
+    dest: /var/osquery/osquery.conf 
+
+- name: copy osquery.conf
+  become: true
+  copy:
+    src: osquery.conf
+    dest: /opt/osquery/share/osquery/packs/attack-range.conf
+
+- name: copy custom osquery flags 
+  become: true
+  copy: 
+    src: custom_osquery.flags
+    dest: /etc/osquery/osquery.flags
+
+- name: Ensure osqueryd service is enabled
+  become: true
+  systemd:
+    name: osqueryd
+    enabled: yes
+
+- name: Ensure osqueryd service is started
+  become: true
+  systemd:
+    name: osqueryd
+    state: started
+
+- name: make /var/log/osquery dir accessible to everyone (rwx)
+  become: true
+  command: chmod a+rwx /var/log/osquery -R
+
+- name: Create folder directory for inputs configuration
+  file:
+    path: "{{ item }}"
+    state: directory
+    recurse: yes
+  with_items:
+    - /opt/splunkforwarder/etc/apps/osquery_app/local/
+
+- name: copy inputs.conf to capture osquery logs
+  copy:
+    src: osquery_inputs.conf
+    dest: /opt/splunkforwarder/etc/apps/osquery_app/local/inputs.conf
+    force: yes

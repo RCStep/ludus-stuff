@@ -1,0 +1,45 @@
+---
+
+- name: Stop splunk uf
+  become: true
+  command: /opt/splunkforwarder/bin/splunk stop
+  ignore_errors: true
+
+- name: Download splunk uf deb package
+  become: yes
+  get_url:
+    url: "{{ ludus_ar_linux_splunk_uf_url }}"
+    dest: /tmp/splunkforwarder.deb
+    validate_certs: no
+
+- name: Install splunk uf
+  become: yes
+  apt: 
+    deb: /tmp/splunkforwarder.deb
+
+- name: copy outputs.conf to forward data to splunk server
+  template:
+    src: outputs.conf.j2
+    dest: /opt/splunkforwarder/etc/system/local/outputs.conf
+    force: yes
+
+- name: splunk license acceptance
+  become: true
+  command: /opt/splunkforwarder/bin/splunk start --accept-license --answer-yes --no-prompt --seed-passwd {{ ludus_ar_linux_splunk_password }}
+
+- name: pause for splunk uf to start
+  pause:
+    seconds: 30
+
+- name: Stop splunk uf
+  become: true
+  command: /opt/splunkforwarder/bin/splunk stop
+
+- name: setup to not start at boot
+  become: true
+  command: "/opt/splunkforwarder/bin/splunk disable boot-start"
+  ignore_errors: true
+
+- name: Start splunk uf
+  become: true
+  command: /opt/splunkforwarder/bin/splunk start

@@ -1,0 +1,42 @@
+
+
+- name: Download Splunk UF from Splunk website
+  win_shell: |
+    [Net.ServicePointManager]::SecurityProtocol = "tls12, tls11, tls"
+    (New-Object System.Net.WebClient).DownloadFile("{{ ludus_ar_windows_uf_url }}", "C:\splunkuf.msi")
+
+- name: Install Splunk_UF MSI
+  win_package:
+    path: C:\splunkuf.msi
+    arguments: 'WINEVENTLOG_SEC_ENABLE=0 WINEVENTLOG_SYS_ENABLE=0 WINEVENTLOG_APP_ENABLE=0 PRIVILEGESECURITY=1 USE_LOCAL_SYSTEM=1 SPLUNKPASSWORD={{ ludus_ar_windows_password }} AGREETOLICENSE=YES /quiet'
+
+- name: Start Splunk UF
+  win_service:
+    name: SplunkForwarder
+    state: started
+
+- name: Wait 60 seconds for Splunk UF to start
+  ansible.builtin.pause:
+    seconds: 60
+
+- name: Stop Splunk UF (with retry)
+  win_service:
+    name: SplunkForwarder
+    state: stopped
+  register: splunk_stop
+  retries: 10
+  delay: 6
+  until: splunk_stop is succeeded
+
+- name: Display message about stopping Splunk UF
+  ansible.builtin.debug:
+    msg: "Stopping Splunk UF to ensure it is not running during configuration and to avoid Splunk licensing volume limits."
+
+- name: Set Splunk UF Service to manual startup
+  win_service:
+    name: SplunkForwarder
+    start_mode: manual        
+
+- name: Display message about manual startup mode
+  ansible.builtin.debug:
+    msg: "Setting Splunk UF to manual startup to prevent it from starting automatically on boot. Enable Service manually for collecting events."

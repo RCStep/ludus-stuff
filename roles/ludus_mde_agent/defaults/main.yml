@@ -1,0 +1,7 @@
+---
+# Role variables should all be prefaced with the name of the role to avoid
+# name conflicts with other roles
+ludus_mde_enrollment_result: false
+ludus_mde_enrollment_result_message: ""
+ludus_mde_enrollment_result_code: 0
+ludus_mde_enrollment_result_error: ""

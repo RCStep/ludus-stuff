@@ -1,0 +1,22 @@
+---
+dependencies: []
+
+galaxy_info:
+  role_name: ludus_litterbox
+  author: rstephenson
+  description: An Ansible Role that installs the Litterbox payload evaluation toolkit service on a Windows host.
+  license: GPLv3
+  version: 1.0.0
+  min_ansible_version: "2.10"
+  platforms:
+    # Modify the platforms here as required
+    # This example includes a lot, see https://github.com/ansible/ansible-lint/blob/main/src/ansiblelint/schemas/meta.json for all possibilities
+    - name: Windows 
+      versions:
+        - "all"
+  galaxy_tags:
+    - security
+    - windows
+
+collections:
+  - ansible.windows

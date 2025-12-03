@@ -1,0 +1,38 @@
+- name: Check if vulnad.out already exists
+  win_stat:
+    path: C:\Program Files\ansible\vulnad.out
+  register: vulnad_out_exists
+
+- name: Print message if Vulnerable-AD has already been run
+  ansible.builtin.debug:
+    msg: "It appears that Vulnerable-AD has already been run (vulnad.out exists). Skipping setup."
+  when: vulnad_out_exists.stat.exists
+
+- name: Create ansible directory
+  win_file:
+    path: C:\Program Files\ansible
+    state: directory
+  when: not vulnad_out_exists.stat.exists
+
+- name: Copy Vulnerable-AD setup script to Windows target
+  win_copy:
+    src: "vulnad.ps1"
+    dest: C:\Program Files\ansible\vulnad.ps1
+  when: not vulnad_out_exists.stat.exists
+
+- name: Import vulnad.ps1 and run Invoke-VulnAd
+  win_shell: powershell -ExecutionPolicy Bypass -Command "Import-Module 'C:\Program Files\ansible\vulnad.ps1'; Invoke-VulnAd -DomainName {{ ansible_domain }} -UsersLimit {{ ludus_ar_vulnerable_ad_users_limit }} -Verbose"
+  register: vulnad_output
+  when: not vulnad_out_exists.stat.exists
+
+- name: Write vulnad output to file
+  win_copy:
+    content: "{{ vulnad_output.stdout }}"
+    dest: C:\Program Files\ansible\vulnad.out
+  when: vulnad_output.stdout is defined and not vulnad_out_exists.stat.exists
+
+- name: Debug Vulnerable-AD setup script output
+  ansible.builtin.debug:
+    msg: "{{ vulnad_output.stdout }}"
+  when: vulnad_output.stdout is defined and vulnad_output.stdout != "" and not vulnad_out_exists.stat.exists
+  ignore_errors: true

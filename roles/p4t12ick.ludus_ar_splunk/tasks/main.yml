@@ -1,0 +1,15 @@
+---
+# This playbook contains common tasks in this role
+
+- include_tasks: splunk.yml
+- include_tasks: inputs.yml
+- include_tasks: indexes.yml
+- include_tasks: limits.yml
+- include_tasks: web_conf.yml
+- include_tasks: server_conf.yml
+
+- include_tasks: install_app_from_s3.yml
+  with_items: "{{ ludus_ar_splunk_apps }}"
+
+- include_tasks: cim.yml
+- include_tasks: phantom.yml

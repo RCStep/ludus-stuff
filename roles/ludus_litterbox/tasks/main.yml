@@ -1,0 +1,15 @@
+---
+
+- include_tasks: windows-disable-defender.yml
+- include_tasks: install_choco.yml
+- include_tasks: install_app_chocolatey.yml
+  with_items:
+    - "git"
+    - "python"
+    - "python3-virtualenv"
+    - "visualstudio2022community"
+- include_tasks: install_litterbox.yml
+- include_tasks: startuptask_litterbox.yml
+
+- name: 'Reboot server'
+  win_reboot:

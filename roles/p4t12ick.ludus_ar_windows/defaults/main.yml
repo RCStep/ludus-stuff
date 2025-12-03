@@ -1,0 +1,7 @@
+---
+
+ludus_ar_windows_splunk_ip: "10.2.20.1"
+ludus_ar_windows_uf_url: "https://download.splunk.com/products/universalforwarder/releases/9.3.0/windows/splunkforwarder-9.3.0-51ccf43db5bd-x64-release.msi"
+ludus_ar_windows_password: "changeme123!"
+ludus_ar_vulnerable_ad: false
+ludus_ar_vulnerable_ad_users_limit: 100

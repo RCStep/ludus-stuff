@@ -1,0 +1,18 @@
+---
+- name: Create a Litterbox startup task
+  win_scheduled_task:
+    name: "LitterBoxStartupTask"
+    description: "LitterBox startup task"
+    state: present
+    triggers:
+      - type: logon
+        delay: PT1M
+    run_level: highest
+    user: "{{ ludus_litterbox_task_username }}"
+    password: "{{ ludus_litterbox_task_password }}"
+    logon_type: password
+    actions:
+      - path: C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe
+        working_directory: "{{ ludus_litterbox_install_path }}"
+        arguments: -ExecutionPolicy Unrestricted -NoExit -Command "C:\LitterBox\venv\Scripts\Activate.ps1 ; python C:\LitterBox\litterbox.py"
+    enabled: yes

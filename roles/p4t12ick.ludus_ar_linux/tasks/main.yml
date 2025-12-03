@@ -1,0 +1,16 @@
+---
+
+- include_tasks: install_universal_forwarder.yml
+- include_tasks: install_osquery_linux.yml
+- include_tasks: install_sysmon_linux.yml
+- include_tasks: install_auditd.yml
+- include_tasks: install_art.yml
+
+- name: Stop splunk uf
+  become: true
+  command: /opt/splunkforwarder/bin/splunk stop
+  ignore_errors: true
+
+- name: Show Splunk UF stop message
+  debug:
+    msg: "Splunk UF is being stopped again after initial startup. Start again manually if events need to be collected."

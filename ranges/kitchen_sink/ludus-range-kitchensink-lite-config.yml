@@ -1,0 +1,201 @@
+ludus:
+  - vm_name: "{{ range_id }}-ad-dc-win2022-server-x64"
+    hostname: "{{ range_id }}-DC01-2022"
+    template: win2022-server-x64-template
+    vlan: 10
+    ip_last_octet: 10
+    ram_gb: 4
+    cpus: 4
+    windows:
+      sysprep: false
+      chocolatey_ignore_checksums: true
+    domain:
+      fqdn: changeme.net
+      role: primary-dc
+    roles:
+    #  - ludus_mde_agent
+      - badsectorlabs.ludus_adcs
+      - p4t12ick.ludus_ar_windows
+    role_vars:
+      ludus_ar_windows_splunk_ip: "10.2.10.6"
+      ludus_ar_vulnerable_ad: true
+
+  #  - vm_name: "{{ range_id }}-ad-win2019-server-x64-1"
+  #    hostname: "{{ range_id }}-W2019"
+  #    template: win2019-server-x64-template
+  #    vlan: 10
+  #    ip_last_octet: 11
+  #    ram_gb: 4
+  #    cpus: 2
+  #    windows:
+  #      install_additional_tools: false
+  #      chocolatey_ignore_checksums: true
+  #    domain:
+  #      fqdn: changeme.net
+  #      role: member
+  #    roles:
+  #      - name: badsectorlabs.ludus_elastic_agent
+  #        depends_on:
+  #          - vm_name: "{{ range_id }}-elastic-server"
+  #            role: badsectorlabs.ludus_elastic_container
+  #      - p4t12ick.ludus_ar_windows
+  #    role_vars:
+  #      ludus_ar_windows_splunk_ip: "10.2.10.6"
+
+  - vm_name: "{{ range_id }}-ad-win2022-server-x64-tpm-1"
+    hostname: "{{ range_id }}-W2022"
+    template: win2022-server-x64-template
+    vlan: 10
+    ip_last_octet: 12
+    ram_gb: 4
+    cpus: 2
+    windows:
+      sysprep: true
+      install_additional_tools: false
+      chocolatey_ignore_checksums: true
+    domain:
+      fqdn: changeme.net
+      role: member
+    roles:
+    #  - ludus_mde_agent
+      - p4t12ick.ludus_ar_windows
+    role_vars:
+      ludus_ar_windows_splunk_ip: "10.2.10.6"
+
+  #  - vm_name: "{{ range_id }}-ad-win10-22h2-enterprise-x64-1"
+  #    hostname: "{{ range_id }}-W10-22H2"
+  #    template: win10-22h2-x64-enterprise-template
+  #    vlan: 10
+  #    ip_last_octet: 20
+  #    ram_gb: 3
+  #    cpus: 2
+  #    windows:
+  #      install_additional_tools: true
+  #      office_version: 2021
+  #      office_arch: 64bit
+  #      chocolatey_ignore_checksums: true
+  #    domain:
+  #      fqdn: changeme.net
+  #      role: member
+  #    roles:
+  #    #  - ludus_mde_agent
+  #      - p4t12ick.ludus_ar_windows
+  #    role_vars:
+  #      ludus_ar_windows_splunk_ip: "10.2.10.6"
+
+  - vm_name: "{{ range_id }}-ad-win11-23h2-enterprise-x64-1"
+    hostname: "{{ range_id }}-W11-23H2"
+    template: win11-23h2-x64-enterprise-template
+    vlan: 10
+    ip_last_octet: 21
+    ram_gb: 4
+    cpus: 2
+    windows:
+      install_additional_tools: true
+      office_version: 2021
+      office_arch: 64bit
+      chocolatey_ignore_checksums: true
+    domain:
+      fqdn: changeme.net
+      role: member
+    roles:
+    #  - ludus_mde_agent
+      - p4t12ick.ludus_ar_windows
+    role_vars:
+      ludus_ar_windows_splunk_ip: "10.2.10.6"
+
+  - vm_name: "{{ range_id }}-ad-win11-24h2-x64-enterprise-tpm-1"
+    hostname: "{{ range_id }}-W11-24H2"
+    template: win11-24h2-x64-enterprise-tpm-template
+    vlan: 10
+    ip_last_octet: 22
+    ram_gb: 4
+    cpus: 2
+    windows:
+      install_additional_tools: true
+      office_version: 2021
+      office_arch: 64bit
+      chocolatey_ignore_checksums: true
+    domain:
+      fqdn: changeme.net
+      role: member
+    testing:
+      snapshot: false
+      block_internet: true
+    roles:
+      - professor-moody.ludus_litterbox
+      - name: badsectorlabs.ludus_elastic_agent
+        depends_on:
+          - vm_name: "{{ range_id }}-elastic-server"
+            role: badsectorlabs.ludus_elastic_container
+      - p4t12ick.ludus_ar_windows
+    role_vars:
+      ludus_litterbox_host: "0.0.0.0"
+      ludus_litterbox_analysis_timeout: 300
+      ludus_litterbox_max_file_size: 146800640
+      ludus_ar_windows_splunk_ip: "10.2.10.6"
+
+  - vm_name: "{{ range_id }}-elastic-server"
+    hostname: "{{ range_id }}-elastic-server"
+    template: debian-12-x64-server-template
+    vlan: 10
+    ip_last_octet: 5
+    ram_gb: 6
+    cpus: 4
+    linux: true
+    testing:
+      snapshot: false
+      block_internet: false
+    roles:
+      - badsectorlabs.ludus_elastic_container
+
+  - vm_name: "{{ range_id }}-splunk-server"
+    hostname: "{{ range_id }}-splunk-server"
+    template: ubuntu-22.04-x64-server-template
+    vlan: 10
+    ip_last_octet: 6
+    ram_gb: 6
+    cpus: 6
+    linux: true
+    testing:
+      snapshot: false
+      block_internet: false
+    roles:
+      - p4t12ick.ludus_ar_splunk
+    role_vars:
+      ludus_ar_splunk_password: "splunkpassword"
+
+  #  - vm_name: "{{ range_id }}-vulnhub"
+  #    hostname: "{{ range_id }}-vulnhub"
+  #    template: debian-12-x64-server-template
+  #    vlan: 10
+  #    ip_last_octet: 7
+  #    ram_gb: 4
+  #    cpus: 2
+  #    linux: true
+  #    testing:
+  #      snapshot: false
+  #      block_internet: false
+  #    roles:
+  #      - p4t12ick.ludus_ar_linux
+  #      - badsectorlabs.ludus_vulhub
+  #    role_vars:
+  #      ludus_ar_linux_splunk_ip: "10.2.10.6"
+  #      vulhub_envs:
+  #        - confluence/CVE-2023-22527
+  #        - tomcat/CVE-2025-24813
+
+  #  - vm_name: "{{ range_id }}-kali"
+  #    hostname: "{{ range_id }}-kali"
+  #    template: kali-x64-desktop-template
+  #    vlan: 10
+  #    ip_last_octet: 8
+  #    ram_gb: 4
+  #    cpus: 2
+  #    linux: true
+  #    testing:
+  #      snapshot: false
+  #      block_internet: false
+
+network:
+  inter_vlan_default: ACCEPT

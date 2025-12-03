@@ -1,0 +1,26 @@
+---
+
+- name: Test for a chocolatey cache
+  delegate_to: localhost
+  ansible.builtin.wait_for:
+    host: 192.0.2.2
+    port: 8081
+    timeout: 2
+  register: choco_test
+  ignore_errors: true
+
+- name: Set chocolatey source
+  ansible.builtin.set_fact:
+    chocolatey_source: http://192.0.2.2:8081/repository/chocolatey/
+  when: not choco_test.failed
+
+- name: Update dotnet framework if needed for Chocolatey 2.0+
+  ansible.builtin.include_tasks: update-dotnet-framework.yml
+
+# https://github.com/chocolatey/chocolatey-ansible/issues/18
+- name: Bootstrap chocolatey by hand
+  chocolatey.chocolatey.win_chocolatey:
+    name:
+      - chocolatey
+    source: http://192.0.2.2:8081/repository/raw/install.ps1
+  when: not choco_test.failed

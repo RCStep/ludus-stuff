@@ -1,0 +1,97 @@
+---
+## MDE agent installation and onboarding (Windows only)
+# This playbook installs and onboards the Microsoft Defender for Endpoint (MDE) agent on supported Windows versions.
+
+- name: MDE agent installation and onboarding (Windows only)
+  block:
+    - name: Display onboarding start message and OS details
+      ansible.builtin.debug:
+        msg:
+          - "Copying down MDE agent onboarding files and installing"
+          - "OS Family: {{ ansible_os_family }}"
+          - "OS Major Version: {{ ansible_distribution_major_version }}"
+          - "OS Full Version: {{ ansible_distribution_version }}"
+
+    # Check if MsSense (MDE agent) is already running
+    - name: Check if MDE agent (MsSense) is already running
+      ansible.windows.win_shell: |
+        $mde_agent = Get-Process | Where-Object { $_.Name -eq "MsSense" }
+        if ($mde_agent) {
+          Write-Host "MDE agent is installed"
+        } else {
+          Write-Host "MDE agent is not installed"
+        }
+      register: mde_agent_precheck
+      ignore_errors: true
+
+    # Print a message if the agent is already installed
+    - name: Print message if MDE agent is already installed
+      ansible.builtin.debug:
+        msg: "MDE agent appears to already be installed. Skipping deployment."
+      when: mde_agent_precheck.stdout is search("MDE agent is installed")
+
+    # Select the correct onboarding package based on Windows version
+    - name: Set MDE package variables based on OS version
+      set_fact:
+        mde_zip: "{{ item.zip }}"
+      with_items:
+        - { versions: ['10.0.19045.0', '10.0.22621.0', '10.0.22631.0', '10.0.26100.0', '10.0.26200.0'], zip: 'files/Win10_11_GatewayWindowsDefenderATPOnboardingPackage.zip' }
+        - { versions: ['10.0.17763.0', '10.0.20348.0'], zip: 'files/Win2019_2022_2025_GatewayWindowsDefenderATPOnboardingPackage.zip' }
+      when: ansible_distribution_version in item.versions
+
+    # Only deploy if MsSense is not running
+    - name: Ensure C:\Temp exists, copy, unzip, and onboard if version matches and MsSense is not running
+      block:
+        - name: Ensure C:\Temp exists
+          ansible.builtin.win_file:
+            path: "C:\\Temp"
+            state: directory
+
+        - name: Copy MDE enrollment script zip
+          ansible.builtin.win_copy:
+            src: "{{ mde_zip }}"
+            dest: "C:\\Temp\\GatewayWindowsDefenderATPOnboardingPackage.zip"
+          retries: 3
+          delay: 5            
+
+        - name: Unzip the MDE enrollment script
+          ansible.builtin.win_unzip:
+            src: "C:\\Temp\\GatewayWindowsDefenderATPOnboardingPackage.zip"
+            dest: "C:\\Temp"
+          retries: 3
+          delay: 5   
+
+        - name: Run the MDE onboarding script
+          ansible.builtin.win_shell: |
+            echo Y | C:\Temp\WindowsDefenderATPLocalOnboardingScript.cmd *>> C:\Temp\mde_onboarding.log
+          args:
+            executable: powershell
+            chdir: "C:\\Temp"
+          register: mde_enrollment_result
+          until: mde_enrollment_result is not failed
+          retries: 3
+          delay: 5
+
+        - name: Check if MDE agent is installed and running
+          ansible.windows.win_shell: |
+            $mde_agent = Get-Process | Where-Object { $_.Name -eq "MsSense" }
+            if ($mde_agent) {
+              Write-Host "MDE agent is installed"
+            } else {
+              Write-Host "MDE agent is not installed"
+            }
+          register: mde_agent_check
+          ignore_errors: true
+          until: mde_agent_check is not failed
+          retries: 3
+          delay: 5
+
+        - name: Print the MDE agent check result
+          ansible.builtin.debug:
+            msg: |
+              MDE agent check message: {{ mde_agent_check.stdout }}
+      when:
+        - mde_zip is defined
+        - mde_agent_precheck.stdout is not search("MDE agent is installed")
+    
+  when: ansible_os_family == "Windows"

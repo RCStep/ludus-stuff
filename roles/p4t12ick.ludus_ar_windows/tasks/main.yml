@@ -1,0 +1,47 @@
+---
+
+# - include_tasks: windows-disable-defender.yml
+
+# Added Vulnerable-AD setup
+- include_tasks: install_vulnerable_ad.yml
+  when: ludus_ar_vulnerable_ad | default(false) | bool
+
+- include_tasks: windows-enable-ps-logging.yml
+- include_tasks: windows-enable-4688-cmd-line-audit.yml
+- include_tasks: install_choco.yml
+- include_tasks: install_app_chocolatey.yml
+  with_items:
+    - "firefox"
+    - "googlechrome"
+    - "git"
+    - "notepadplusplus"
+    - "7zip"
+    - "adobereader"
+    - "python"
+
+- include_tasks: install_splunk_uf.yml
+- include_tasks: configure_outputs.yml
+- include_tasks: collect_powershell_logs.yml
+# - include_tasks: collect_attack_simulation_logs.yml
+- include_tasks: collect_sysmon_logs.yml
+- include_tasks: collect_windows_event_logs.yml
+
+- name: Restart splunk
+  win_command: splunk.exe restart
+  args:
+    chdir: C:\Program Files\SplunkUniversalForwarder\bin\
+
+- name: Create ansible directories
+  win_file:
+    path: "{{ item }}"
+    state: directory
+  with_items:
+    - 'c:\Program Files\ansible'
+    - 'c:\ProgramData\ansible\log'
+
+- include_tasks: windows-sysmon.yml
+- include_tasks: windows-logging-registry.yml
+# - include_tasks: install_atomic_red_team.yml
+
+- name: 'Reboot server'
+  win_reboot:
