@@ -51,7 +51,7 @@ ludus templates add -d win2019-server-x64
 ludus templates add -d win10-22h2-x64-enterprise
 ludus templates add -d win11-23h2-x64-enterprise
 ludus templates add -d ubuntu-22.04-x64-server
-cd /home/user/ludus-rule10/templates
+cd /home/user/ludus-stuff/templates
 ludus templates add -d win11-24h2-x64-enterprise-tpm --force
 ```
 
@@ -67,7 +67,7 @@ ludus ansible roles add badsectorlabs.ludus_adcs
 ludus ansible roles add badsectorlabs.ludus_elastic_container
 ludus ansible roles add professor-moody.ludus_litterbox
 
-cd /home/user/ludus-rule10/roles
+cd /home/user/ludus-stuff/roles
 ludus ansible roles add -d ludus_mde_agent --force
 ludus ansible roles add -d badsectorlabs.ludus_elastic_agent --force
 ludus ansible roles add -d p4t12ick.ludus_ar_windows --force
@@ -78,7 +78,7 @@ ludus ansible roles add -d p4t12ick.ludus_ar_linux --force
 # Edit the range configuration
 
 ```
-nano /home/user/ludus-rule10/ranges/kitchen_sink/ludus-range-kitchensink-config.yml
+nano /home/user/ludus-stuff/ranges/kitchen_sink/ludus-range-kitchensink-config.yml
 ```
 
 Replace the ```domain: fqdn: changeme.net``` on each Domain joined VM with the Domain name you wish for your test deployment.
@@ -93,7 +93,7 @@ If you want to change anything else about the range (the VMs deployed, the roles
 
 # Import the range configuration
 ```
-cd /home/user/ludus-rule10/ranges/kitchen_sink
+cd /home/user/ludus-stuff/ranges/kitchen_sink
 ludus range config set -f ludus-range-kitchensink-config.yml
 ```
 
